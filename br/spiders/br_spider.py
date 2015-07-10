@@ -60,13 +60,6 @@ class GamesSpider(scrapy.Spider):
 
 
 
-'''
-
-'''
-
-
-
-
 
 
 '''
