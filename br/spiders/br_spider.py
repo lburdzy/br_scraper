@@ -3,7 +3,7 @@
 
 import scrapy
 
-from br.items import BrItem
+from br.items import GameItem
 
 class GamesSpider(scrapy.Spider):
     name = "gamespider"
@@ -13,7 +13,7 @@ class GamesSpider(scrapy.Spider):
     ]
 
     def parse(self, response):
-        item = BrItem()
+        item = GameItem()
         for sel in response.xpath('//table[contains(@id, "tgl_basic")]/tbody/tr[contains(@id, "tgl_basic")]'):
 
 
@@ -59,7 +59,31 @@ class GamesSpider(scrapy.Spider):
 
 
 
+class SeasonSpider(scrapy.Spider):
+    name = 'seasonspider'
+    allowed_domains = ["basketball-reference.com"]
+    start_urls = [
+    "http://www.basketball-reference.com/teams/BOS/"
+    ]
 
+    def parse(self, response):
+        for sel in response.xpath('//*[@id="BOS"]/tbody//tr'):
+            qwe = sel.xpath('td[1]/a/@href')
+            print qwe
+
+
+
+class TeamSpider(scrapy.Spider):
+    name = 'teamspider'
+    allowed_domains = ["basketball-reference.com"]
+    start_urls = [
+    "http://www.basketball-reference.com/teams/"
+    ]
+
+    def parse(self, response):
+        for sel in response.xpath('//*[@id="active"]/tbody//tr[@class="full_table"]'):
+            qwe = sel.xpath('td[1]/a/@href').extract()
+            print qwe
 
 
 '''
@@ -73,4 +97,7 @@ response.xpath('//*[@id="ATL"]/tbody//tr/td[1]/a/@href').extract()
 zrobic @text()=available
 
 //*[@id="info_box"]/div[4]/ul/li[6]/ul/li[1]/a
+
+
+//*[@id="BOS"]/tbody/tr[2]/td[1]/a
 '''
