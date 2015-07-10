@@ -86,6 +86,26 @@ class TeamSpider(scrapy.Spider):
             print qwe
 
 
+
+
+class TheUltimateMegaSpiderOfDeath(scrapy.Spider):
+    name = 'Ben'
+    allowed_domains = ["basketball-reference.com"]
+    start_urls = [
+    "http://www.basketball-reference.com/teams/"
+    ]
+
+    def parse(self, response):
+        item = GameItem()
+        for sel in response.xpath('//*[@id="active"]/tbody//tr[@class="full_table"]'):
+            item['team_name'] = sel.xpath('td[1]/a/@href').extract()
+            url = response.urljoin(item['team_name'][0].split('/')[2])
+            yield scrapy.Request(url, callback=self.parse_dir_contents)
+
+    def parse_dir_contents(self, response):
+        yield 'dziala'
+
+
 '''
 /teams/
 response.xpath('//*[@id="active"]/tbody//tr[@class="full_table"]/td[1]/a/@href').extract()
