@@ -1,9 +1,9 @@
-
+# -*- coding: utf-8 -*-
 
 
 import scrapy
-
-from br.items import GameItem
+from functools import partial
+from br.items import GameItem, CarItem
 
 class GamesSpider(scrapy.Spider):
     name = "gamespider"
@@ -98,12 +98,58 @@ class TheUltimateMegaSpiderOfDeath(scrapy.Spider):
     def parse(self, response):
         item = GameItem()
         for sel in response.xpath('//*[@id="active"]/tbody//tr[@class="full_table"]'):
-            item['team_name'] = sel.xpath('td[1]/a/@href').extract()
-            url = response.urljoin(item['team_name'][0].split('/')[2])
-            yield scrapy.Request(url, callback=self.parse_dir_contents)
+            item['team_name'] = sel.xpath('td[1]/a/@href').extract_first().split('/')[2]
+            url = response.urljoin(item['team_name']) + '/'
+            request = scrapy.Request(url, callback=self.parse_dir_contents)
+            request.meta['item'] = item
+            yield request
 
     def parse_dir_contents(self, response):
-        yield 'dziala'
+        item = response.meta['item']
+        for sel in response.xpath('//*[@id=' + item['team_name'] + ']/tbody//tr'):
+            qwe = sel.xpath('td[1]/a/@href')
+            yield item
+
+
+
+
+
+
+class OlxSpider(scrapy.Spider):
+    name = 'frank'
+    allowed_domains = ['olx.pl']
+    start_urls = [
+    'http://olx.pl/motoryzacja/samochody/'
+    ]
+
+
+    def parse(self, response):
+        item = CarItem()
+        for sel in response.xpath('//*[@id="offers_table"]/tbody//tr/td[@class="offer "]'):
+            item['price'] = sel.xpath('table/tbody/tr[1]/td[3]/div/p/strong/text()').extract_first()[:-3]
+            item['url'] = sel.xpath('table/tbody/tr[1]/td[2]/div/h3/a/@href').extract_first()
+            #url = item['url']#[0]
+            request = scrapy.Request(item['url'], callback=self.parse_car)
+            request.meta['item'] = item
+            #print 'URL TO: ', url
+            yield request
+
+
+    def parse_car(self, response):
+        item = response.meta['item']
+        item['title'] = response.xpath('//*[@id="offer_active"]/div[3]/div[1]/div[1]/div[1]/h1/text()').extract_first().strip()
+        url = response.xpath('//*[@id="linkUserAds"]/@href').extract_first()
+        #print '\nURL TO:\n', url, '\n'
+        request = scrapy.Request(url, callback=self.parse_user)
+        request.meta['item'] = item
+        yield request
+
+
+    def parse_user(self, response):
+        #print '\n\n DZIALA \n\n'
+        item = response.meta['item']
+        item['nick'] = response.xpath('//*[@id="body-container"]/div/div/div[1]/div/div/h3/text()').extract_first()
+        yield item
 
 
 '''

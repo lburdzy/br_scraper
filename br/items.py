@@ -36,3 +36,11 @@ class GameItem(scrapy.Item):
     blocks = scrapy.Field()
     turnovers = scrapy.Field()
     personal_fouls = scrapy.Field()
+
+
+
+class CarItem(scrapy.Item):
+    title = scrapy.Field()
+    price = scrapy.Field()
+    url = scrapy.Field()
+    nick = scrapy.Field()
