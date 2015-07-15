@@ -10,10 +10,7 @@ from scrapy.loader.processors import TakeFirst
 
 class GameItem(scrapy.Item):
     date = scrapy.Field()
-    team_name = scrapy.Field(
-        output_processor=TakeFirst()
-
-    ) #wyciagnac wczesniej z url
+    team_name = scrapy.Field() #wyciagnac wczesniej z url
     opponent_name = scrapy.Field()
     at_home = scrapy.Field() # wyciagnac z @
     game_won = scrapy.Field() #boolean na podstawie tm_pts - opp_pts
@@ -39,6 +36,11 @@ class GameItem(scrapy.Item):
 
 
 
+
+
+
+
+#
 class CarItem(scrapy.Item):
     title = scrapy.Field()
     price = scrapy.Field()
