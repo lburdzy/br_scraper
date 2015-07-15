@@ -95,20 +95,29 @@ class TheUltimateMegaSpiderOfDeath(scrapy.Spider):
     "http://www.basketball-reference.com/teams/"
     ]
 
+
     def parse(self, response):
         item = GameItem()
-        for sel in response.xpath('//*[@id="active"]/tbody//tr[@class="full_table"]'):
-            item['team_name'] = sel.xpath('td[1]/a/@href').extract_first().split('/')[2]
+        for sel in response.xpath('//*[@id="active"]/tbody//tr[@class="full_table"]/td[1]/a/@href').extract():
+            item['team_name'] = sel.split('/')[2]
+            #print '\n\nteam_name: \n', item['team_name']
             url = response.urljoin(item['team_name']) + '/'
             request = scrapy.Request(url, callback=self.parse_dir_contents)
             request.meta['item'] = item
             yield request
 
+
     def parse_dir_contents(self, response):
         item = response.meta['item']
-        for sel in response.xpath('//*[@id=' + item['team_name'] + ']/tbody//tr'):
-            qwe = sel.xpath('td[1]/a/@href')
-            yield item
+        item['opponent_name'] = response.xpath('//*[@id="info_box"]/h1')
+        print item
+        #rty = '//*[@id=' + item['team_name'] + ']/tbody//tr'
+        #qwe = response.xpath(rty)
+        #print '\n\n RTY:\n', rty
+        yield item
+        #for sel in response.xpath('//*[@id=' + item['team_name'] + ']/tbody//tr'):
+        #    qwe = sel.xpath('td[1]/a/@href')
+        #    yield item
 
 
 
