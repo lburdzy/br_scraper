@@ -109,7 +109,10 @@ class TheUltimateMegaSpiderOfDeath(scrapy.Spider):
 
     def parse_dir_contents(self, response):
         item = response.meta['item']
-        item['opponent_name'] = response.xpath('//*[@id="info_box"]/h1')
+        #
+        #to prawidlowo wyswietla dluga nazwe zespolu:
+        item['opponent_name'] = response.xpath('//*[@id="info_box"]/h1/text()').extract()
+
         print item
         #rty = '//*[@id=' + item['team_name'] + ']/tbody//tr'
         #qwe = response.xpath(rty)
