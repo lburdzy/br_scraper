@@ -6,7 +6,7 @@
 # http://doc.scrapy.org/en/latest/topics/items.html
 
 import scrapy
-from scrapy.loader.processors import TakeFirst
+#from scrapy.loader.processors import TakeFirst
 
 class GameItem(scrapy.Item):
     date = scrapy.Field()
@@ -33,10 +33,28 @@ class GameItem(scrapy.Item):
     blocks = scrapy.Field()
     turnovers = scrapy.Field()
     personal_fouls = scrapy.Field()
+    attendance = scrapy.Field()
 
 
 
+class PlayerItem(scrapy.Item):
+    height = scrapy.Field()
+    weight = scrapy.Field()
 
+
+class TeamItem(scrapy.Item):
+    championships = scrapy.Field()
+    full_name = scrapy.Field()
+    playoff_appearances = scrapy.Field()
+    wins = scrapy.Field()
+    losses = scrapy.Field()
+
+
+class SeasonItem(scrapy.Item):
+    coaches = scrapy.Field()
+    wins = scrapy.Field()
+    losses = scrapy.Field()
+    attendance = scrapy.Field()
 
 
 

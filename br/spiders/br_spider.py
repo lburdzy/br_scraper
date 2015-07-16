@@ -3,7 +3,7 @@
 
 import scrapy
 from functools import partial
-from br.items import GameItem, CarItem
+from br.items import GameItem, CarItem, PlayerItem, TeamItem, SeasonItem
 
 
 
@@ -82,9 +82,16 @@ class TheUltimateMegaSpiderOfDeath(scrapy.Spider):
             yield item
 
 
+class PlayerSpider(scrapy.Spider):
+    name = "player"
+    allowed_domains = ["basketball-reference.com"]
+    start_urls = [
+    "http://www.basketball-reference.com/teams/BOS/2010/gamelog"
+    ]
 
 
-
+    def parse(self, response):
+        qwe = response.xpath('//*[@id="info_box"]/p[2]/text()[3]').extract_first().strip().encode('ascii', errors='ignore')
 
 
 
@@ -102,7 +109,7 @@ class TheUltimateMegaSpiderOfDeath(scrapy.Spider):
 
 
 class GamesSpider(scrapy.Spider):
-    name = "gamespider"
+    name = "game"
     allowed_domains = ["basketball-reference.com"]
     start_urls = [
     "http://www.basketball-reference.com/teams/BOS/2010/gamelog"
@@ -151,30 +158,43 @@ class GamesSpider(scrapy.Spider):
 
 
 class SeasonSpider(scrapy.Spider):
-    name = 'seasonspider'
+    name = 'season'
     allowed_domains = ["basketball-reference.com"]
     start_urls = [
-    "http://www.basketball-reference.com/teams/BOS/"
+    "http://www.basketball-reference.com/teams/SAC/2015.html"
     ]
 
     def parse(self, response):
-        for sel in response.xpath('//*[@id="BOS"]/tbody//tr'):
-            qwe = sel.xpath('td[1]/a/@href')
-            print qwe
+        season_item = SeasonItem()
+        season_item['wins'] = response.xpath('//*[@id="info_box"]/p[2]/text()[1]').extract_first().strip().replace('-', ',').split(',')[0]
+        season_item['losses'] = response.xpath('//*[@id="info_box"]/p[2]/text()[1]').extract_first().strip().replace('-', ',').split(',')[1]
+        season_item['attendance'] = response.xpath('//*[@id="info_box"]/p[4]/text()[2]').extract_first().split()[0]
+        season_item['coaches'] = []
+        for coach in response.xpath('//*[@id="info_box"]/p[2]/span[2]/following-sibling::a/text()').extract():
+            season_item['coaches'].append(coach)
+
+
+        yield season_item
+
 
 
 
 class TeamSpider(scrapy.Spider):
-    name = 'teamspider'
+    name = 'team'
     allowed_domains = ["basketball-reference.com"]
     start_urls = [
-    "http://www.basketball-reference.com/teams/"
+    "http://www.basketball-reference.com/teams/LAL/"
     ]
 
     def parse(self, response):
-        for sel in response.xpath('//*[@id="active"]/tbody//tr[@class="full_table"]'):
-            qwe = sel.xpath('td[1]/a/@href').extract()
-            print qwe
+        team_item = TeamItem()
+        team_item['playoff_appearances'] = response.xpath('//*[@id="info_box"]/div[5]/div/p[3]/text()').extract()[0].strip()
+        team_item['championships'] = response.xpath('//*[@id="info_box"]/div[5]/div/p[3]/text()').extract()[1].strip()
+        team_item['full_name'] = response.xpath('//*[@id="info_box"]/div[5]/div/p[1]/text()[2]').extract_first().strip()
+        team_item['wins'] = response.xpath('//*[@id="info_box"]/div[5]/div/p[2]/text()').extract()[1].strip().replace('-', ' ').split()[0]
+        team_item['losses'] = response.xpath('//*[@id="info_box"]/div[5]/div/p[2]/text()').extract()[1].strip().replace('-', ' ').split()[1]
+        yield team_item
+
 
 
 
