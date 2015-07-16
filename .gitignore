@@ -65,3 +65,4 @@ target/
 #moje
 *.json
 *.json*
+games.json
