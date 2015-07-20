@@ -4,7 +4,7 @@
 import scrapy
 from functools import partial
 from br.items import GameItem, CarItem, PlayerItem, TeamItem, SeasonItem
-from br.items import PlayerLoader
+from br.items import PlayerLoader, TeamLoader, SeasonLoader, GameLoader
 
 
 
@@ -360,7 +360,29 @@ class SeasonSpider(scrapy.Spider):
 
 
 
+class SeasonSpider2(scrapy.Spider):
+    name = 'season2'
+    allowed_domains = ["basketball-reference.com"]
+    start_urls = [
+    "http://www.basketball-reference.com/teams/SAC/2015.html"
+    ]
 
+    def parse(self, response):
+        l = SeasonLoader(item=SeasonItem(), response=response)
+
+
+        wins = response.xpath('//*[@id="info_box"]/p[2]/text()[1]').extract_first()#.strip().replace('-', ',').split(',')[0]
+        losses = response.xpath('//*[@id="info_box"]/p[2]/text()[1]').extract_first()#.strip().replace('-', ',').split(',')[1]
+        attendance = response.xpath('//*[@id="info_box"]/p[4]/text()[2]').extract_first()#.split()[0]
+        coaches = []
+        for coach in response.xpath('//*[@id="info_box"]/p[2]/span[2]/following-sibling::a/text()').extract():
+            coaches.append(coach)
+
+        l.add_value('wins', wins)
+        l.add_value('losses', losses)
+        l.add_value('attendance', attendance)
+        l.add_value('coaches', coaches)
+        yield l.load_item()
 
 
 
@@ -380,15 +402,28 @@ class TeamSpider(scrapy.Spider):
     ]
 
     def parse(self, response):
-        team_item = TeamItem()
-        team_item['playoff_appearances'] = response.xpath('//*[@id="info_box"]/div[5]/div/p[3]/text()').extract()[0].strip()
-        team_item['championships'] = response.xpath('//*[@id="info_box"]/div[5]/div/p[3]/text()').extract()[1].strip()
-        team_item['full_name'] = response.xpath('//*[@id="info_box"]/div[5]/div/p[1]/text()[2]').extract_first().strip()
-        team_item['wins'] = response.xpath('//*[@id="info_box"]/div[5]/div/p[2]/text()').extract()[1].strip().replace('-', ' ').split()[0]
-        team_item['losses'] = response.xpath('//*[@id="info_box"]/div[5]/div/p[2]/text()').extract()[1].strip().replace('-', ' ').split()[1]
+        #team_item = TeamItem()
+        l = TeamLoader(item=TeamItem(), response=response)
+
+        playoff_appearances = response.xpath(
+            '//*[@id="info_box"]/div[5]/div/p[3]/text()').extract()[0]#.strip()
+        championships = response.xpath(
+            '//*[@id="info_box"]/div[5]/div/p[3]/text()').extract()[1]
+        full_name = response.xpath(
+            '//*[@id="info_box"]/div[5]/div/p[1]/text()[2]').extract()#_first().strip()
+        wins = response.xpath(
+            '//*[@id="info_box"]/div[5]/div/p[2]/text()').extract()[1]#.strip().replace('-', ' ').split()[0]
+        losses = response.xpath(
+            '//*[@id="info_box"]/div[5]/div/p[2]/text()').extract()[1]#.strip().replace('-', ' ').split()[1]
 
 
-        yield team_item
+        l.add_value('playoff_appearances', playoff_appearances)
+        l.add_value('championships', championships)
+        l.add_value('full_name', full_name)
+        l.add_value('wins', wins)
+        l.add_value('losses', losses)
+
+        yield l.load_item()
 
 
 

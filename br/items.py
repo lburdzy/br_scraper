@@ -38,6 +38,22 @@ def is_left_handed(str):
         return True
     return False
 
+def get_wins(str):
+    return int(str.split('-')[0])
+
+def get_losses(str):
+    return int(str.split('-')[1].strip(','))
+
+def get_full_name(str):
+    return str.split(',')[0].strip()
+
+def get_attendance(str):
+    return int(str.split()[0].replace(',', ''))
+
+
+class GameLoader(ItemLoader):
+    pass
+
 class GameItem(scrapy.Item):
     date = scrapy.Field()
     team_name = scrapy.Field() #wyciagnac wczesniej z url
@@ -88,7 +104,13 @@ class PlayerItem(scrapy.Item):
 
 
 class TeamLoader(ItemLoader):
-    pass
+    default_output_processor = TakeFirst()
+    default_input_processor = TakeFirst()
+    championships_out = Compose(TakeFirst(), int)
+    playoff_appearances_out = Compose(TakeFirst(), int)
+    wins_out = Compose(TakeFirst(), unicode.split, TakeFirst(), get_wins)
+    losses_out = Compose(TakeFirst(), unicode.split, TakeFirst(), get_losses)
+    full_name_out = Compose(TakeFirst(), get_full_name)
 
 class TeamItem(scrapy.Item):
     championships = scrapy.Field()
@@ -98,6 +120,14 @@ class TeamItem(scrapy.Item):
     losses = scrapy.Field()
     seasons = scrapy.Field()
 
+
+class SeasonLoader(ItemLoader):
+    default_input_processor = Identity()
+    default_output_processor = Identity()
+
+    attendance_out = Compose(TakeFirst(), unicode.strip, get_attendance)
+    wins_out = Compose(TakeFirst(), unicode.split, TakeFirst(), get_wins)
+    losses_out = Compose(TakeFirst(), unicode.split, TakeFirst(), get_losses)
 
 
 class SeasonItem(scrapy.Item):
@@ -109,7 +139,6 @@ class SeasonItem(scrapy.Item):
 
 
 
-#
 class CarItem(scrapy.Item):
     title = scrapy.Field()
     price = scrapy.Field()
