@@ -5,7 +5,8 @@
 # See documentation in:
 # http://doc.scrapy.org/en/latest/topics/items.html
 
-import scrapy
+import scrapy, datetime
+#from datetime import date
 from scrapy.loader import ItemLoader
 from scrapy.loader.processors import TakeFirst, MapCompose, Join, Compose, Identity
 
@@ -50,9 +51,36 @@ def get_full_name(str):
 def get_attendance(str):
     return int(str.split()[0].replace(',', ''))
 
+def get_date_from_str(str):
+    year = int(str.split('-')[0])
+    month = int(str.split('-')[1])
+    day = int(str.split('-')[2])
+    return datetime.date(year, month, day)
+
+def is_at_home(str):
+    if '@' in str:
+        return False
+    return True
+
+def game_was_won(str):
+    if 'w' in str.lower():
+        return True
+    return False
+
+def percentage_to_float(str):
+    return float('0' + str)*100
+
 
 class GameLoader(ItemLoader):
-    pass
+    default_input_processor = Identity()
+    default_output_processor = Compose(TakeFirst(), int)
+    date_out = Compose(TakeFirst(), get_date_from_str)
+    opponent_name_out = Compose(TakeFirst())
+    at_home_out = Compose(TakeFirst(), is_at_home)
+    game_won_out = Compose(TakeFirst(), game_was_won)
+    field_goal_percentage_out = Compose(TakeFirst(), percentage_to_float)
+    free_throw_percentage_out = Compose(TakeFirst(), percentage_to_float)
+    three_point_percentage_out = Compose(TakeFirst(), percentage_to_float)
 
 class GameItem(scrapy.Item):
     date = scrapy.Field()

@@ -2,6 +2,7 @@
 
 
 import scrapy
+
 from functools import partial
 from br.items import GameItem, CarItem, PlayerItem, TeamItem, SeasonItem
 from br.items import PlayerLoader, TeamLoader, SeasonLoader, GameLoader
@@ -141,44 +142,48 @@ class GamesSpider(scrapy.Spider):
     ]
 
     def parse(self, response):
-        item = GameItem()
-        for sel in response.xpath('//table[contains(@id, "tgl_basic")]/tbody/tr[contains(@id, "tgl_basic")]'):
+        xpath = '//table[contains(@id, "tgl_basic")]/tbody/tr[contains(@id, "tgl_basic")]'
+        for sel in response.xpath(xpath):
+            l = GameLoader(item=GameItem(), response=response)
 
+            #print '\n\n\n', sel.xpath('//td[3]/a/text()').extract(), '\n\n\n'
+            print sel.xpath('td[3]/a/text()').extract()
+            l.add_xpath('date',  './/td[3]/a/text()')
+            l.add_xpath('opponent_name', './/td[5]/a/text()')
+            l.add_xpath('at_home', './/td[4]/text()')
+            l.add_xpath('game_won', './/td[6]/text()')
+            l.add_xpath('team_points', './/td[7]/text()')
+            l.add_xpath('opponent_points', './/td[8]/text()')
 
-            #misc data
-            item['date'] = sel.xpath('td[3]/a/text()').extract()
-            item['opponent_name'] = sel.xpath('td[5]/a/text()').extract()
-            item['at_home'] = sel.xpath('td[4]/text()').extract()
-            item['game_won'] = sel.xpath('td[6]/text()').extract()
-            item['team_points'] = sel.xpath('td[7]/text()').extract()
-            item['opponent_points'] = sel.xpath('td[8]/text()').extract()
 
             #shooting
-            item['field_goals'] = sel.xpath('td[9]/text()').extract()
-            item['field_goal_attempts'] = sel.xpath('td[10]/text()').extract()
-            item['field_goal_percentage'] = sel.xpath('td[11]/text()').extract()
-            item['three_pointers'] = sel.xpath('td[12]/text()').extract()
-            item['three_point_atempts'] = sel.xpath('td[13]/text()').extract()
-            item['three_point_percentage'] = sel.xpath('td[14]/text()').extract()
-            item['free_throws'] = sel.xpath('td[15]/text()').extract()
-            item['free_throw_attempts'] = sel.xpath('td[16]/text()').extract()
-            item['free_throw_percentage'] = sel.xpath('td[17]/text()').extract()
+            l.add_xpath('field_goals', './/td[9]/text()')
+            l.add_xpath('field_goal_attempts', './/td[10]/text()')
+            l.add_xpath('field_goal_percentage', './/td[11]/text()')
+            l.add_xpath('three_pointers', './/td[12]/text()')
+            l.add_xpath('three_point_atempts', './/td[13]/text()')
+            l.add_xpath('three_point_percentage', './/td[14]/text()')
+            l.add_xpath('free_throws', './/td[15]/text()')
+            l.add_xpath('free_throw_attempts', './/td[16]/text()')
+            l.add_xpath('free_throw_percentage', './/td[17]/text()')
 
             #offense
-            item['offensive_rebounds'] = sel.xpath('td[18]/text()').extract()
-            item['assists'] = sel.xpath('td[20]/text()').extract()
-            item['turnovers'] = sel.xpath('td[23]/text()').extract()
+            l.add_xpath('offensive_rebounds', './/td[18]/text()')
+            l.add_xpath('assists', './/td[20]/text()')
+            l.add_xpath('turnovers', './/td[23]/text()')
+
 
 
             #defence
-            item['steals'] = sel.xpath('td[21]/text()').extract()
-            item['blocks'] = sel.xpath('td[22]/text()').extract()
-            item['personal_fouls'] = sel.xpath('td[24]/text()').extract()
+            l.add_xpath('steals', './/td[21]/text()')
+            l.add_xpath('blocks', './/td[22]/text()')
+            l.add_xpath('personal_fouls', './/td[24]/text()')
 
 
-            item['total_rebounds'] = sel.xpath('td[19]/text()').extract()
+            l.add_xpath('total_rebounds', './/td[19]/text()')
 
-            yield item
+            #print sel
+            yield l.load_item()
 
 
 
