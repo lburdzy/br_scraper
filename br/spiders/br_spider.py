@@ -4,9 +4,19 @@
 import scrapy
 from functools import partial
 from br.items import GameItem, CarItem, PlayerItem, TeamItem, SeasonItem
+from br.items import PlayerLoader
 
 
 
+
+
+#####
+#####
+#####
+#####   ZROBIC ATTENDANCE w GAMES
+#####
+#####
+#####
 class TheUltimateMegaSpiderOfDeath(scrapy.Spider):
     name = 'Ben'
     allowed_domains = ["basketball-reference.com"]
@@ -30,7 +40,6 @@ class TheUltimateMegaSpiderOfDeath(scrapy.Spider):
             url = response.urljoin(sel)[:-5] + '/gamelog/'
 
             request = scrapy.Request(url, callback=self.parse_season)
-
             yield request
 
 
@@ -38,9 +47,9 @@ class TheUltimateMegaSpiderOfDeath(scrapy.Spider):
 
     def parse_season(self, response):
         #yield {'rty': 'qwerty'}
-        item = GameItem()
 
         for sel in response.xpath('//table[contains(@id, "tgl_basic")]/tbody/tr[contains(@id, "tgl_basic")]'):
+            item = GameItem()
 
 
             #misc data
@@ -82,16 +91,32 @@ class TheUltimateMegaSpiderOfDeath(scrapy.Spider):
             yield item
 
 
+
+
+
+
+
 class PlayerSpider(scrapy.Spider):
     name = "player"
     allowed_domains = ["basketball-reference.com"]
     start_urls = [
-    "http://www.basketball-reference.com/teams/BOS/2010/gamelog"
+    "http://www.basketball-reference.com/players/b/boshch01.html"
     ]
 
 
     def parse(self, response):
-        qwe = response.xpath('//*[@id="info_box"]/p[2]/text()[3]').extract_first().strip().encode('ascii', errors='ignore')
+        l = PlayerLoader(item=PlayerItem(), response=response)
+
+        height = response.xpath('//p[@class="padding_bottom_half"]/text()').extract()[2]
+        weight = response.xpath('//p[@class="padding_bottom_half"]/text()').extract()[3].split()[0]
+        left_handed = response.xpath('//p[@class="padding_bottom_half"]/text()').extract()[1]
+
+        l.add_value('height', height)
+        l.add_value('height_si', height)
+        l.add_value('weight', weight)
+        l.add_value('weight_si', weight)
+        l.add_value('left_handed', left_handed)
+        yield l.load_item()
 
 
 
@@ -157,6 +182,24 @@ class GamesSpider(scrapy.Spider):
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class SeasonSpider(scrapy.Spider):
     name = 'season'
     allowed_domains = ["basketball-reference.com"]
@@ -173,8 +216,158 @@ class SeasonSpider(scrapy.Spider):
         for coach in response.xpath('//*[@id="info_box"]/p[2]/span[2]/following-sibling::a/text()').extract():
             season_item['coaches'].append(coach)
 
+        print '\n\n\n', response.url, '\n\n\n'
+        url = response.urljoin(response.url)[:-5] + '/gamelog/'
+        request = scrapy.Request(url, callback=self.parse_season)
+        request.meta['season_item'] = season_item
+        yield request
+        #yield season_item
 
+
+
+    def parse_season(self, response):
+        season_item = response.meta['season_item']
+        games = season_item['games']
+        for sel in response.xpath('//table[contains(@id, "tgl_basic")]/tbody/tr[contains(@id, "tgl_basic")]'):
+            item = GameItem()
+
+
+            #misc data
+            item['team_name'] = response.url.split('/')[-4]
+            item['date'] = sel.xpath('td[3]/a/text()').extract()
+            item['opponent_name'] = sel.xpath('td[5]/a/text()').extract()
+            item['at_home'] = sel.xpath('td[4]/text()').extract()
+            item['game_won'] = sel.xpath('td[6]/text()').extract()
+            item['team_points'] = sel.xpath('td[7]/text()').extract()
+            item['opponent_points'] = sel.xpath('td[8]/text()').extract()
+
+            #shooting
+            item['field_goals'] = sel.xpath('td[9]/text()').extract()
+            item['field_goal_attempts'] = sel.xpath('td[10]/text()').extract()
+            item['field_goal_percentage'] = sel.xpath('td[11]/text()').extract()
+            item['three_pointers'] = sel.xpath('td[12]/text()').extract()
+            item['three_point_atempts'] = sel.xpath('td[13]/text()').extract()
+            item['three_point_percentage'] = sel.xpath('td[14]/text()').extract()
+            item['free_throws'] = sel.xpath('td[15]/text()').extract()
+            item['free_throw_attempts'] = sel.xpath('td[16]/text()').extract()
+            item['free_throw_percentage'] = sel.xpath('td[17]/text()').extract()
+
+            #offense
+            item['offensive_rebounds'] = sel.xpath('td[18]/text()').extract()
+            item['assists'] = sel.xpath('td[20]/text()').extract()
+            item['turnovers'] = sel.xpath('td[23]/text()').extract()
+
+
+
+            #defence
+            item['steals'] = sel.xpath('td[21]/text()').extract()
+            item['blocks'] = sel.xpath('td[22]/text()').extract()
+            item['personal_fouls'] = sel.xpath('td[24]/text()').extract()
+
+
+            item['total_rebounds'] = sel.xpath('td[19]/text()').extract()
+
+            games[item['date']] = item
         yield season_item
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -193,7 +386,39 @@ class TeamSpider(scrapy.Spider):
         team_item['full_name'] = response.xpath('//*[@id="info_box"]/div[5]/div/p[1]/text()[2]').extract_first().strip()
         team_item['wins'] = response.xpath('//*[@id="info_box"]/div[5]/div/p[2]/text()').extract()[1].strip().replace('-', ' ').split()[0]
         team_item['losses'] = response.xpath('//*[@id="info_box"]/div[5]/div/p[2]/text()').extract()[1].strip().replace('-', ' ').split()[1]
+
+
         yield team_item
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -234,6 +459,10 @@ class OlxSpider(scrapy.Spider):
         item = response.meta['item']
         item['nick'] = response.xpath('//*[@id="body-container"]/div/div/div[1]/div/div/h3/text()').extract_first()
         yield item
+
+
+
+
 
 
 '''
