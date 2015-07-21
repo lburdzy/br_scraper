@@ -146,41 +146,74 @@ class GamesSpider(scrapy.Spider):
         for sel in response.xpath(xpath):
             l = GameLoader(item=GameItem(), response=response)
 
-            #print '\n\n\n', sel.xpath('//td[3]/a/text()').extract(), '\n\n\n'
-            print sel.xpath('td[3]/a/text()').extract()
-            l.add_xpath('date',  './/td[3]/a/text()')
-            l.add_xpath('opponent_name', './/td[5]/a/text()')
-            l.add_xpath('at_home', './/td[4]/text()')
-            l.add_xpath('game_won', './/td[6]/text()')
-            l.add_xpath('team_points', './/td[7]/text()')
-            l.add_xpath('opponent_points', './/td[8]/text()')
 
+            date = sel.xpath('td[3]/a/text()').extract()
+            opponent_name = sel.xpath('td[5]/a/text()').extract()
+            at_home = sel.xpath('td[4]/text()').extract()
+            game_won = sel.xpath('td[6]/text()').extract()
+            team_points = sel.xpath('td[7]/text()').extract()
+            opponent_points = sel.xpath('td[8]/text()').extract()
 
             #shooting
-            l.add_xpath('field_goals', './/td[9]/text()')
-            l.add_xpath('field_goal_attempts', './/td[10]/text()')
-            l.add_xpath('field_goal_percentage', './/td[11]/text()')
-            l.add_xpath('three_pointers', './/td[12]/text()')
-            l.add_xpath('three_point_atempts', './/td[13]/text()')
-            l.add_xpath('three_point_percentage', './/td[14]/text()')
-            l.add_xpath('free_throws', './/td[15]/text()')
-            l.add_xpath('free_throw_attempts', './/td[16]/text()')
-            l.add_xpath('free_throw_percentage', './/td[17]/text()')
+            field_goals = sel.xpath('td[9]/text()').extract()
+            field_goal_attempts = sel.xpath('td[10]/text()').extract()
+            field_goal_percentage = sel.xpath('td[11]/text()').extract()
+            three_pointers = sel.xpath('td[12]/text()').extract()
+            three_point_atempts = sel.xpath('td[13]/text()').extract()
+            three_point_percentage = sel.xpath('td[14]/text()').extract()
+            free_throws = sel.xpath('td[15]/text()').extract()
+            free_throw_attempts = sel.xpath('td[16]/text()').extract()
+            free_throw_percentage = sel.xpath('td[17]/text()').extract()
 
             #offense
-            l.add_xpath('offensive_rebounds', './/td[18]/text()')
-            l.add_xpath('assists', './/td[20]/text()')
-            l.add_xpath('turnovers', './/td[23]/text()')
+            offensive_rebounds = sel.xpath('td[18]/text()').extract()
+            assists = sel.xpath('td[20]/text()').extract()
+            turnovers = sel.xpath('td[23]/text()').extract()
 
 
 
             #defence
-            l.add_xpath('steals', './/td[21]/text()')
-            l.add_xpath('blocks', './/td[22]/text()')
-            l.add_xpath('personal_fouls', './/td[24]/text()')
+            steals = sel.xpath('td[21]/text()').extract()
+            blocks = sel.xpath('td[22]/text()').extract()
+            personal_fouls = sel.xpath('td[24]/text()').extract()
 
 
-            l.add_xpath('total_rebounds', './/td[19]/text()')
+            total_rebounds = sel.xpath('td[19]/text()').extract()
+
+
+            l.add_value('date',  date)
+            l.add_value('opponent_name', opponent_name)
+            l.add_value('at_home', at_home)
+            l.add_value('game_won', game_won)
+            l.add_value('team_points', team_points)
+            l.add_value('opponent_points', opponent_points)
+
+
+            #shooting
+            l.add_value('field_goals', field_goals)
+            l.add_value('field_goal_attempts', field_goal_attempts)
+            l.add_value('field_goal_percentage', field_goal_percentage)
+            l.add_value('three_pointers', three_pointers)
+            l.add_value('three_point_atempts', three_point_atempts)
+            l.add_value('three_point_percentage', three_point_percentage)
+            l.add_value('free_throws', free_throws)
+            l.add_value('free_throw_attempts', free_throw_attempts)
+            l.add_value('free_throw_percentage', free_throw_percentage)
+
+            #offense
+            l.add_value('offensive_rebounds', offensive_rebounds)
+            l.add_value('assists', assists)
+            l.add_value('turnovers', turnovers)
+
+
+
+            #defence
+            l.add_value('steals', steals)
+            l.add_value('blocks', blocks)
+            l.add_value('personal_fouls', personal_fouls)
+
+
+            l.add_value('total_rebounds', total_rebounds)
 
             #print sel
             yield l.load_item()
