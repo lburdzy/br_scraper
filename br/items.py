@@ -93,6 +93,10 @@ def get_season_year(str):
     return int(str.split('/')[-1].split('.')[0])
 
 
+def get_player_side_id(str):
+    return str.split('/')[-1].split('.')[0]
+
+
 class GameLoader(ItemLoader):
     default_input_processor = Identity()
     default_output_processor = Compose(TakeFirst(), int)
@@ -143,7 +147,7 @@ class PlayerLoader(ItemLoader):
     weight_out = Compose(TakeFirst(), int)
     weight_si_out = Compose(TakeFirst(), pounds_to_kilograms)
     left_handed_out = Compose(TakeFirst(), is_left_handed)
-    site_id_out = Identity()
+    site_id_out = Compose(TakeFirst(), get_player_side_id)
 
 
 class PlayerItem(scrapy.Item):

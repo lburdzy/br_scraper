@@ -90,14 +90,6 @@ class BRSpider(scrapy.Spider):
     ]
 
     def parse(self, response):
-        tl = TeamLoader(item=TeamItem(), response=response)
-        tl
-
-        sl = SeasonLoader(item=SeasonItem(), response=response)
-        sl
-
-        gl = GameLoader(item=GameItem(), response=response)
-        gl
 
         for sel in response.xpath(
             '//*[@id="active"]/tbody//tr[@class="full_table"]/td[1]/a/@href'
@@ -330,17 +322,47 @@ class GamePlayerSpider(scrapy.Spider):
     name = 'gplayer'
     allowed_domains = ["basketball-reference.com"]
     start_urls = [
-        'http://www.basketball-reference.com/boxscores/196810290NYA.html'
+        'http://www.basketball-reference.com/boxscores/201311230SAS.html'
     ]
 
     def parse(self, response):
-        team = 'NYA'
-        for sel in response.xpath('//*[@id="' + team + '_basic"]/tbody/tr'):
-            pl = PlayerLoader(item=PlayerItem(), response=response)
-            foobar = sel.xpath('td[1]/a/@href').extract_first()
-            print foobar
-            pl.add_value('site_id', foobar)
-            yield pl.load_item()
+        team = 'SAS'
+        for sel in response.xpath('//*[@id="' + team +
+                                  '_basic"]/tbody/tr[not(@class="no_ranker thead")]'):
+            # pl = PlayerLoader(item=PlayerItem(), response=response)
+            site_id = sel.xpath('td[1]/a/@href').extract_first()
+
+            url = response.urljoin(site_id)
+
+            request = scrapy.Request(url, callback=self.parse_player)
+            request.meta['site_id'] = site_id
+            yield request
+
+    def parse_player(self, response):
+        l = PlayerLoader(item=PlayerItem(), response=response)
+
+        site_id = response.meta['site_id']
+
+        height = response.xpath(
+            '//p[@class="padding_bottom_half"]/text()'
+            ).extract()[2]
+        weight = response.xpath(
+            '//p[@class="padding_bottom_half"]/text()'
+            ).extract()[3].split()[0]
+        left_handed = response.xpath(
+            '//p[@class="padding_bottom_half"]/text()'
+        ).extract()[1]
+
+        l.add_value('site_id', site_id)
+        l.add_value('height', height)
+        l.add_value('height_si', height)
+        l.add_value('weight', weight)
+        l.add_value('weight_si', weight)
+        l.add_value('left_handed', left_handed)
+
+        yield l.load_item()
+
+        # yield pl.load_item()
 
 
 class SeasonSpider2(scrapy.Spider):
@@ -416,7 +438,6 @@ class TeamSpider(scrapy.Spider):
             '//*[@id="info_box"]/div[5]/div/p[2]/text()'
             ).extract()[1].split('(')[0]
 
-        print '\n\n', losses, '\n\n'
         l.add_value('playoff_appearances', playoff_appearances)
         l.add_value('championships', championships)
         l.add_value('full_name', full_name)
