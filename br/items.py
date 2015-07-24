@@ -12,8 +12,8 @@ from scrapy.loader import ItemLoader
 from scrapy.loader.processors import TakeFirst, MapCompose, Compose, Identity
 
 
-def unicode_to_ascii(str):
-    return str.encode('ascii', errors='ignore')
+def unicode_to_ascii(s):
+    return s.encode('ascii', errors='ignore')
 
 
 def feet_to_centimeters(feet, inches):
@@ -28,73 +28,76 @@ def feet_to_inches(feet, inches):
     return feet*12 + inches
 
 
-def extract_height(str):
-    feet = int(str.split('-')[0])
-    inches = int(str.split('-')[1])
+def extract_height(s):
+    feet = int(s.split('-')[0])
+    inches = int(s.split('-')[1])
     return feet_to_inches(feet, inches)
 
 
-def extract_height_si(str):
-    feet = int(str.split('-')[0])
-    inches = int(str.split('-')[1])
+def extract_height_si(s):
+    feet = int(s.split('-')[0])
+    inches = int(s.split('-')[1])
     return feet_to_centimeters(feet, inches)
 
 
-def is_left_handed(str):
-    if 'left' in str.lower():
+def is_left_handed(s):
+    if 'left' in s.lower():
         return True
     return False
 
 
-def get_wins(str):
-    return int(str.split('-')[0])
+def get_wins(s):
+    return int(s.split('-')[0])
 
 
-def get_losses(str):
-    return int(str.split('-')[1].strip(','))
+def get_losses(s):
+    return int(s.split('-')[1].strip(','))
 
 
-def get_full_name(str):
-    return str.split(',')[0].strip()
+def get_full_name(s):
+    return s.split(',')[0].strip()
 
 
-def get_attendance(str):
+def get_attendance(s):
     try:
-        attendance = int(str.split()[0].replace(',', ''))
+        attendance = int(s.split()[0].replace(',', ''))
     except:
         attendance = None
     return attendance
 
 
-def get_date_from_str(str):
-    year = int(str.split('-')[0])
-    month = int(str.split('-')[1])
-    day = int(str.split('-')[2])
+def get_date_from_str(s):
+    year = int(s.split('-')[0])
+    month = int(s.split('-')[1])
+    day = int(s.split('-')[2])
     return datetime.date(year, month, day)
 
 
-def is_at_home(str):
-    if '@' in str:
-        return False
-    return True
+def is_at_home(s):
+    print "\t\t\t", s
+    if '@' in s:
+        s = False
+    else:
+        s = True
+    return s
 
 
-def game_was_won(str):
-    if 'w' in str.lower():
+def game_was_won(s):
+    if 'w' in s.lower():
         return True
     return False
 
 
-def percentage_to_float(str):
-    return float('0' + str)*100
+def percentage_to_float(s):
+    return float('0' + s)*100
 
 
-def get_season_year(str):
-    return int(str.split('/')[-1].split('.')[0])
+def get_season_year(s):
+    return int(s.split('/')[-1].split('.')[0])
 
 
-def get_player_side_id(str):
-    return str.split('/')[-1].split('.')[0]
+def get_player_side_id(s):
+    return s.split('/')[-1].split('.')[0]
 
 
 class GameLoader(ItemLoader):
@@ -102,7 +105,6 @@ class GameLoader(ItemLoader):
     default_output_processor = Compose(TakeFirst(), int)
     date_out = Compose(TakeFirst(), get_date_from_str)
     opponent_name_out = Compose(TakeFirst())
-    at_home_out = Compose(TakeFirst(), is_at_home)
     game_won_out = Compose(TakeFirst(), game_was_won)
     field_goal_percentage_out = Compose(TakeFirst(), percentage_to_float)
     free_throw_percentage_out = Compose(TakeFirst(), percentage_to_float)

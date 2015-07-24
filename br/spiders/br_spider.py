@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-
 import scrapy
 
 from br.items import GameItem, CarItem, PlayerItem, TeamItem, SeasonItem
@@ -118,24 +117,59 @@ class BRSpider(scrapy.Spider):
             '//*[@id="info_box"]/div[5]/div/p[2]/text()'
             ).extract()[1].split('(')[0]
 
+        seasons = {}
+
         tl.add_value('playoff_appearances', playoff_appearances)
         tl.add_value('championships', championships)
         tl.add_value('full_name', full_name)
         tl.add_value('wins', wins)
         tl.add_value('losses', losses)
 
-        # abbr = response.xpath(
-        #     '//*[@id="info_box"]/div[4]/ul/li[1]/a/@href'
-        # ).extract_first().split('/')[2]
-        # for sel in response.xpath(
-        #     '//*[@id="' + abbr + '"]/tbody//tr/td[1]/a/@href'
-        # ).extract():
-        #     url = response.urljoin(sel)#[:-5] + '/gamelog/'
-        #
-        #     request = scrapy.Request(url, callback=self.parse_season)
-        #     yield request
+        abbr = response.xpath(
+            '//*[@id="info_box"]/div[4]/ul/li[1]/a/@href'
+        ).extract_first().split('/')[2]
+        for sel in response.xpath(
+            '//*[@id="' + abbr + '"]/tbody//tr/td[1]/a/@href'
+        ).extract():
+            url = response.urljoin(sel)  # [:-5] + '/gamelog/'
 
+            request = scrapy.Request(url, callback=self.parse_season)
+            request.meta['seasons'] = seasons
+            print '\n\n\n', request, '\n\n\n'
+        tl.add_value('seasons', seasons)
         yield tl.load_item()
+
+    def parse_season(self, response):
+        print '\n\n\n', 'qweeeeeeeeeeeeeeee', '\n\n\n'
+        sl = SeasonLoader(item=SeasonItem(), response=response)
+        seasons = 'qwe'
+        print '\n\n\n', seasons, '\n\n\n'
+        # seasons_key = response.url
+        # print '\n\n\n\n\n', response.url, '\n\n\n\n\n'
+        sl.add_value('year', response.url)
+        wins = response.xpath(
+            '//*[@id="info_box"]/p[2]/text()[1]'
+            ).extract_first()  # .strip().replace('-', ',').split(',')[0]
+        losses = response.xpath(
+            '//*[@id="info_box"]/p[2]/text()[1]'
+            ).extract_first()  # .strip().replace('-', ',').split(',')[1]
+        attendance = response.xpath(
+            '//*[@id="info_box"]/p[4]/text()[2]'
+            ).extract_first()  # .split()[0]
+        coaches = []
+        for coach in response.xpath(
+            '//*[@id="info_box"]/p[2]/span[2]/following-sibling::a/text()'
+                ).extract():
+            coaches.append(coach)
+
+        sl.add_value('wins', wins)
+        sl.add_value('losses', losses)
+        sl.add_value('attendance', attendance)
+        sl.add_value('coaches', coaches)
+        seasons['one_season'] = sl.load_item()
+        # print sl.load_item()
+        # yield sl.load_item()
+        yield seasons
 
 
 class PlayerSpider(scrapy.Spider):
@@ -182,6 +216,7 @@ class GamesSpider(scrapy.Spider):
             date = sel.xpath('td[3]/a/text()').extract()
             opponent_name = sel.xpath('td[5]/a/text()').extract()
             at_home = sel.xpath('td[4]/text()').extract()
+            at_home = False if at_home else True
             game_won = sel.xpath('td[6]/text()').extract()
             team_points = sel.xpath('td[7]/text()').extract()
             opponent_points = sel.xpath('td[8]/text()').extract()
@@ -328,7 +363,8 @@ class GamePlayerSpider(scrapy.Spider):
     def parse(self, response):
         team = 'SAS'
         for sel in response.xpath('//*[@id="' + team +
-                                  '_basic"]/tbody/tr[not(@class="no_ranker thead")]'):
+                                  '_basic"]/tbody/tr[not(@class="no_ranker thead")]'
+                                  ):
             # pl = PlayerLoader(item=PlayerItem(), response=response)
             site_id = sel.xpath('td[1]/a/@href').extract_first()
 
