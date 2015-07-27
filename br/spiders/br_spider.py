@@ -16,36 +16,68 @@ class TheUltimateMegaSpiderOfDeath(scrapy.Spider):
     ]
 
     def parse(self, response):
+        item = TeamItem()
         for sel in response.xpath(
-            '//*[@id="active"]/tbody//tr[@class="full_table"]/td[1]/a/@href'
+            # '//*[@id="active"]/tbody//tr[@class="full_table"]/td[1]/a/@href'
+            '//*[@id="active"]/tbody//tr[1]/td[1]/a/@href'
                 ).extract():
             team_name = sel.split('/')[2]
             url = response.urljoin(team_name) + '/'
+
             request = scrapy.Request(url, callback=self.parse_team)
+            request.meta['item'] = item
             yield request
+            print item
+
+    # def get_team_name(self, response):
+    #     item = response.meta['item']
+    #     # item['full_name'] = 'test'
+    #     item['playoff_appearances'] = response.xpath(
+    #         '//*[@id="info_box"]/div[5]/div/p[3]/text()'
+    #         ).extract()[0].split('(')[0]  # .strip()
+    #     item['championships'] = response.xpath(
+    #         '//*[@id="info_box"]/div[5]/div/p[3]/text()'
+    #         ).extract()[1].split('(')[0]
+    #     item['full_name'] = response.xpath(
+    #         '//*[@id="info_box"]/div[5]/div/p[1]/text()[2]'
+    #         ).extract()  # _first().strip()
+    #     item['wins'] = response.xpath(
+    #         '//*[@id="info_box"]/div[5]/div/p[2]/text()'
+    #         ).extract()[1].split('(')[0]
+    #     item['losses'] = response.xpath(
+    #         '//*[@id="info_box"]/div[5]/div/p[2]/text()'
+    #         ).extract()[1].split('(')[0]
+    #     yield item
 
     def parse_team(self, response):
-        #
+        team_item = response.meta['item']
+        seasons = {}
         abbr = response.xpath(
             '//*[@id="info_box"]/div[4]/ul/li[1]/a/@href'
                 ).extract_first().split('/')[2]
         for sel in response.xpath(
-            '//*[@id="' + abbr + '"]/tbody//tr/td[1]/a/@href'
+            '//*[@id="' + abbr + '"]/tbody//tr[position()<2]/td[1]/a/@href'
                 ).extract():
             url = response.urljoin(sel)[:-5] + '/gamelog/'
-
+            year = int(sel.split('/')[-1].split('.')[0])
+            seasons[year] = {}
+            # games = response.meta['item']
             request = scrapy.Request(url, callback=self.parse_season)
+            request.meta['seasons'] = seasons[year]
             yield request
+        team_item['seasons'] = seasons
+
 
     def parse_season(self, response):
         # yield {'rty': 'qwerty'}
-
+        season = response.meta['seasons']
         for sel in response.xpath(
             ('//table[contains(@id, "tgl_basic")]'
              '/tbody/tr[contains(@id, "tgl_basic")]')
         ):
-            item = GameItem()
-
+            # item = GameItem()
+            # team_item = response.meta['item']
+            item = {}
             # misc data
             item['team_name'] = response.url.split('/')[-4]
             item['date'] = sel.xpath('td[3]/a/text()').extract()
@@ -77,8 +109,12 @@ class TheUltimateMegaSpiderOfDeath(scrapy.Spider):
             item['personal_fouls'] = sel.xpath('td[24]/text()').extract()
 
             item['total_rebounds'] = sel.xpath('td[19]/text()').extract()
-
-            yield item
+            # team_item['seasons'] = item
+            date = item['date'][0]
+            # year = response.url.split('/')[-3]
+            season[date] = item
+            #print '\n\n\n\n\n', 'this: ', season, '\n\n\n\n\n'
+        yield season
 
 
 class BRSpider(scrapy.Spider):
@@ -117,36 +153,38 @@ class BRSpider(scrapy.Spider):
             '//*[@id="info_box"]/div[5]/div/p[2]/text()'
             ).extract()[1].split('(')[0]
 
-        seasons = {}
-
         tl.add_value('playoff_appearances', playoff_appearances)
         tl.add_value('championships', championships)
         tl.add_value('full_name', full_name)
         tl.add_value('wins', wins)
         tl.add_value('losses', losses)
 
+        # tl.add_value('seasons', {})
         abbr = response.xpath(
             '//*[@id="info_box"]/div[4]/ul/li[1]/a/@href'
         ).extract_first().split('/')[2]
         for sel in response.xpath(
-            '//*[@id="' + abbr + '"]/tbody//tr/td[1]/a/@href'
-        ).extract():
-            url = response.urljoin(sel)  # [:-5] + '/gamelog/'
-
-            request = scrapy.Request(url, callback=self.parse_season)
-            request.meta['seasons'] = seasons
-            print '\n\n\n', request, '\n\n\n'
-        tl.add_value('seasons', seasons)
+                '//*[@id="' + abbr + '"]/tbody//tr/td[1]/a/@href').extract():
+            # seasons = {}
+            # url = response.urljoin(sel)  # [:-5] + '/gamelog/'
+            #
+            # print response.meta
+            # request = scrapy.Request(url)  # , callback=self.parse_season)
+            tl.add_value('seasons', self.parse_season(response))
+            # request.meta['team_item'] = tl
+            # yield request
+            #
+            # tl.add_value('seasons', tl['seasons'])
         yield tl.load_item()
 
     def parse_season(self, response):
-        print '\n\n\n', 'qweeeeeeeeeeeeeeee', '\n\n\n'
+        # print '\n\n\n', 'qweeeeeeeeeeeeeeee', '\n\n\n'
         sl = SeasonLoader(item=SeasonItem(), response=response)
-        seasons = 'qwe'
-        print '\n\n\n', seasons, '\n\n\n'
+        # seasons = response.meta['team_item']['seasons']
+        # print '\n\n\n', seasons, '\n\n\n'
         # seasons_key = response.url
         # print '\n\n\n\n\n', response.url, '\n\n\n\n\n'
-        sl.add_value('year', response.url)
+        # sl.add_value('year', response.url)
         wins = response.xpath(
             '//*[@id="info_box"]/p[2]/text()[1]'
             ).extract_first()  # .strip().replace('-', ',').split(',')[0]
@@ -166,10 +204,10 @@ class BRSpider(scrapy.Spider):
         sl.add_value('losses', losses)
         sl.add_value('attendance', attendance)
         sl.add_value('coaches', coaches)
-        seasons['one_season'] = sl.load_item()
+        # seasons['one_season'] = sl.load_item()
         # print sl.load_item()
         # yield sl.load_item()
-        yield seasons
+        yield sl.load_item()
 
 
 class PlayerSpider(scrapy.Spider):
@@ -301,7 +339,7 @@ class SeasonSpider(scrapy.Spider):
                 ).extract():
             season_item['coaches'].append(coach)
 
-        print '\n\n\n', response.url, '\n\n\n'
+        # print '\n\n\n', response.url, '\n\n\n'
         url = response.urljoin(response.url)[:-5] + '/gamelog/'
         request = scrapy.Request(url, callback=self.parse_season)
         request.meta['season_item'] = season_item
