@@ -27,7 +27,7 @@ class TheUltimateMegaSpiderOfDeath(scrapy.Spider):
             request = scrapy.Request(url, callback=self.parse_team)
             request.meta['item'] = item
             yield request
-            print item
+            print(item) 
 
     # def get_team_name(self, response):
     #     item = response.meta['item']
@@ -66,7 +66,6 @@ class TheUltimateMegaSpiderOfDeath(scrapy.Spider):
             request.meta['seasons'] = seasons[year]
             yield request
         team_item['seasons'] = seasons
-
 
     def parse_season(self, response):
         # yield {'rty': 'qwerty'}
